@@ -194,7 +194,9 @@ class lc_simulation(object):
 
 		self.covariance = np.cov(m=[self.mean_mag_set, self.mean_frac_err_set, self.gap_num_set, self.epoch_set])
 		
-
+		print self.gap_num_set
+		print self.gap_pos_set
+		print self.mean_mag_set
 
 
 
@@ -333,13 +335,26 @@ class lc_simulation(object):
 		for i in range(lc_number):
 			try:
 				for trial_num in range(10):
+
+
 					try:
 						self.single_simulate(i, prior=self.prior, model=self.model, timescales=timescales, max_timescales=max_timescales, del_mag_dict=del_mag_dict)
+						del_mag_dict['number'].append(i)
+						del_mag_dict['redshift'].append(self.redshift_set[i])
 						break
 					except Exception as e:
 						if e is not KeyboardInterrupt:
 							pass
 							# print "error when generating light curve."
+
+					
+					# self.single_simulate(i, prior=self.prior, model=self.model, timescales=timescales, max_timescales=max_timescales, del_mag_dict=del_mag_dict)
+					# del_mag_dict['number'].append(i)
+					# del_mag_dict['redshift'].append(self.redshift_set[i])
+
+					
+					# print "failed one simulation."
+					# yyy = raw_input('just for pause.')
 			except KeyboardInterrupt:
 				sio.savemat((self.output_path + '/del_mag_stat_%s_band.mat' % selected_band), del_mag_dict)
 				print "delta magnitude statistics saved."
@@ -359,8 +374,10 @@ class lc_simulation(object):
 		if i % 1000 == 0:
 			print "finished %d simulations." %i 
 		
+		# print "0"
+
 		gap_num = choice(self.gap_num_set, size=1)
-		gap_pos = np.sort(choice(self.gap_pos_set, size=gap_num))
+		gap_pos = np.sort(choice(self.gap_pos_set, size=int(gap_num)))
 		mean_mag = choice(self.mean_mag_set, size=1)
 
 		# print "1"
@@ -486,9 +503,10 @@ class lc_simulation(object):
 			lc_err = np.array(lcnew[2])
 			MJD = np.array(MJD)
 
+			if np.max(lc_mag) - np.min(lc_mag) > 5:
+				continue
 			
-			del_mag_dict['number'].append(i)
-			del_mag_dict['redshift'].append(self.redshift_set[i])
+			
 
 			# print '6'
 			# print timescales, max_timescales
@@ -551,12 +569,10 @@ class lc_simulation(object):
 				else:
 					del_mag_dict['max_del_mag_within_' + str(mts)].append(-1.0)
 
-		# print '8'
-			# print np.array(max_mag_max_timescales)
-			if np.max(np.array(max_mag_max_timescales)) < 5:
-				break
-			else:
-				pass
+			# print '8'
+			
+			break
+
 				# print "oops!"
 		# lc_dataframe = pd.DataFrame(data=np.transpose(np.array([MJD, lc_mag, lc_err])), columns=['MJD', 'mag', 'err'])
 		# output_name = '%s/z=%f_%s_%d.txt' %(self.output_path, self.redshift_set[i], self.dataset, i)
