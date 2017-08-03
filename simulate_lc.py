@@ -220,8 +220,8 @@ class lc_simulation(object):
 		mask2 = np.array(drw['npts']) < 10
 		mask3 = np.array(drw['Plike']) - np.array(drw['Pnoise']) <= 2
 		mask4 = np.array(drw['Plike']) - np.array(drw['Pinf']) <= 0.05
-		mask5 = np.array(drw['edge']) == 0
-		mask = [mask1[i] and mask2[i] and mask3[i] and mask4[i] and mask5[i] for i in range(len(self.tau_set))]
+		mask5 = np.array(drw['edge']) != 0
+		mask = [mask1[i] or mask2[i] or mask3[i] or mask4[i] or mask5[i] for i in range(len(self.tau_set))]
 
 		self.sigma_set = np.ma.array(self.sigma_set, mask=mask).compressed()
 		self.tau_set = np.ma.array(self.tau_set, mask=mask).compressed()
@@ -275,22 +275,9 @@ class lc_simulation(object):
 
 		for ts in timescales:
 			del_mag_dict['max_del_mag_on_' + str(ts)] = []
-			del_mag_dict['big_num_on_' + str(ts)] = []
-			del_mag_dict['big_sigma_on_' + str(ts)] = []
-			del_mag_dict['big_tau_on_' + str(ts)] = []
-			del_mag_dict['normal_sigma_on_' + str(ts)] = []
-			del_mag_dict['normal_tau_on_' + str(ts)] = []
-			del_mag_dict['big_mag_on_' + str(ts)] = []
-			del_mag_dict['normal_mag_on_' + str(ts)] = []
 		for mts in max_timescales:
 			del_mag_dict['max_del_mag_within_' + str(mts)] = []
-			del_mag_dict['big_num_within_' + str(mts)] = []
-			del_mag_dict['big_sigma_within_' + str(mts)] = []
-			del_mag_dict['big_tau_within_' + str(mts)] = []
-			del_mag_dict['normal_sigma_within_' + str(mts)] = []
-			del_mag_dict['normal_tau_within_' + str(mts)] = []
-			del_mag_dict['big_mag_within_' + str(mts)] = []
-			del_mag_dict['normal_mag_within_' + str(mts)] = []
+
 
 		del_mag_dict['number'] = []
 		del_mag_dict['redshift'] = []
@@ -529,17 +516,6 @@ class lc_simulation(object):
 				if len(mag_this_ts):
 					del_mag_dict['max_del_mag_on_' + str(ts)].append(np.max(mag_this_ts))
 					max_mag_timescales.append(np.max(mag_this_ts))
-					# if np.max(mag_this_ts) > 5:
-					# 	print sigma, tau
-					# 	del_mag_dict['big_num_on_' + str(ts)].append(i)
-					# 	del_mag_dict['big_sigma_on_' + str(ts)].append(sigma)
-					# 	del_mag_dict['big_tau_on_' + str(ts)].append(tau)
-					# 	del_mag_dict['big_mag_on_' + str(ts)].append(mean_mag)
-					# else:
-					# 	del_mag_dict['normal_sigma_on_' + str(ts)].append(sigma)
-					# 	del_mag_dict['normal_tau_on_' + str(ts)].append(tau)
-					# 	del_mag_dict['normal_mag_on_' + str(ts)].append(mean_mag)
-
 				else:
 					del_mag_dict['max_del_mag_on_' + str(ts)].append(-1.0)
 
@@ -557,15 +533,7 @@ class lc_simulation(object):
 				if len(mag_this_mts):
 					del_mag_dict['max_del_mag_within_' + str(mts)].append(np.max(mag_this_mts))
 					max_mag_max_timescales.append(np.max(mag_this_mts))
-					# if np.max(mag_this_mts) > 5:
-					# 	del_mag_dict['big_num_within_' + str(mts)].append(i)
-					# 	del_mag_dict['big_sigma_within_' + str(mts)].append(sigma)
-					# 	del_mag_dict['big_tau_within_' + str(mts)].append(tau)
-					# 	del_mag_dict['big_mag_within_' + str(mts)].append(mean_mag)
-					# else:
-					# 	del_mag_dict['normal_sigma_within_' + str(mts)].append(sigma)
-					# 	del_mag_dict['normal_tau_within_' + str(mts)].append(tau)
-					# 	del_mag_dict['normal_mag_within_' + str(mts)].append(mean_mag)
+					
 				else:
 					del_mag_dict['max_del_mag_within_' + str(mts)].append(-1.0)
 
