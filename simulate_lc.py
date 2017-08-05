@@ -450,9 +450,20 @@ class lc_simulation(object):
 					# use the interval generated to yield the next observation time point
 					MJD = np.append(MJD, MJD[-1] + intv)
 					
+
 					
 					if MJD[-1] - MJD[0] > baseline:
 						break
+				MJD = np.array(MJD)
+				good_all_ts = 1
+				for ts in timescales:
+					good_this_ts = np.intersect1d(np.where(MJD[1:] - MJD[0:-1] > 0.9 * ts), np.where(MJD[1:] - MJD[0:-1] < 1.1 * ts))
+					if len(good_this_ts):
+						pass
+					else:
+						good_all_ts = 0
+				if not good_all_ts:
+					continue
 
 			elif prior == 'epoch':
 				epoch = 4000
