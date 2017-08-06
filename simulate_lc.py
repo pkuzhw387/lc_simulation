@@ -524,8 +524,9 @@ class lc_simulation(object):
 			# print "mag: ", lc_mag
 			# print "max_del_mag: ", np.max(lc_mag) - np.min(lc_mag)
 
-			if np.max(lc_mag) - np.min(lc_mag) > 5:
-				continue
+			# Cancel the mag limit and see what happens if Macleod+10 method is implemented.
+			# if np.max(lc_mag) - np.min(lc_mag) > 5:
+			# 	continue
 			
 			
 
