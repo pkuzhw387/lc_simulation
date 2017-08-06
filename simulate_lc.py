@@ -10,12 +10,13 @@ from javelin.predict import PredictSpear
 from scipy import stats
 from astropy.io import fits
 import scipy.io as sio
+import time
 
 epo_up_lim = 100000
 
 class lc_simulation(object):
 	def __init__(self, store_path=None, lc_path=None, drw_path=None):
-
+		np.random.seed(int(time.time()))
 		self.drw_path = drw_path
 		self.drw_band = input("Please input the band of DRW parameters")
 		self.lc_path = lc_path
@@ -332,6 +333,8 @@ class lc_simulation(object):
 					except Exception as e:
 						if e is not KeyboardInterrupt:
 							pass
+						elif e is ValueError:
+							break
 							# print "error when generating light curve."
 
 					
@@ -342,6 +345,7 @@ class lc_simulation(object):
 					
 					# print "failed one simulation."
 					# yyy = raw_input('just for pause.')
+				# print "finished %d simulation." %i
 			except KeyboardInterrupt:
 				sio.savemat((self.output_path + '/del_mag_stat_%s_band.mat' % selected_band), del_mag_dict)
 				print "delta magnitude statistics saved."
@@ -365,7 +369,6 @@ class lc_simulation(object):
 
 		gap_num = choice(self.gap_num_set, size=1)
 		gap_pos = np.sort(choice(self.gap_pos_set, size=int(gap_num)))
-		mean_mag = choice(self.mean_mag_set, size=1)
 
 		# print "1"
 
@@ -377,8 +380,12 @@ class lc_simulation(object):
 			
 			zp1 = self.redshift_set[i] + 1.0
 			mean_mag = self.mean_mag_set[i]
+			# print "mean_mag: ", mean_mag
 		start_MJD = choice(self.start_MJD_set, size=1)
 		frac_err = choice(self.frac_err_set, size=1)
+
+		if not np.isfinite(mean_mag):
+			raise ValueError
 
 		# print "2"
 		# print self.sigma_set
@@ -396,9 +403,7 @@ class lc_simulation(object):
 		lwids = [2.0, 0]
 		lscales = [0.05, 1]
 
-		MJD = np.array([])
-		flux = np.array([])
-		err = np.array([])
+		
 
 
 		# print "4"
@@ -414,6 +419,9 @@ class lc_simulation(object):
 
 
 		while True:
+			MJD = np.array([])
+			flux = np.array([])
+			err = np.array([])
 
 			if model == "DRW":
 				while True:
@@ -422,6 +430,7 @@ class lc_simulation(object):
 					# The observed tau would be dilated by a factor of (1+z)
 					# print zp1
 					tau = self.tau_set[ind] * zp1
+					# print "sigma and tau: ", sigma, tau
 					# tau = self.tau_set[ind]
 					if tau / zp1 <= 4000.0:
 						break
@@ -434,36 +443,39 @@ class lc_simulation(object):
 			if prior == 'baseline':
 				# baseline = choice(self.baseline_set, size=1)
 				baseline = 4000.0
-				for k in range(0, epo_up_lim):
-					if k == 0:
-						MJD = np.append(MJD, start_MJD)
-						frac_err = choice(self.frac_err_set, size=1)
+				# for k in range(0, epo_up_lim):
+				# 	if k == 0:
+				# 		MJD = np.append(MJD, start_MJD)
+				# 		frac_err = choice(self.frac_err_set, size=1)
 						
-					# draw a interval value from the ensemble
-					intv = choice(self.intv_set, size=1)
+				# 	# draw a interval value from the ensemble
+				# 	intv = choice(self.intv_set, size=1)
 
-					# mock the gaps
-					for j in range(gap_num):
-						if k == gap_pos[j] + 1:
-							intv = choice(self.gap_dur_set, size=1)
+				# 	# mock the gaps
+				# 	# for j in range(gap_num):
+				# 	# 	if k == gap_pos[j] + 1:
+				# 	# 		intv = choice(self.gap_dur_set, size=1)
 
-					# use the interval generated to yield the next observation time point
-					MJD = np.append(MJD, MJD[-1] + intv)
+				# 	# use the interval generated to yield the next observation time point
+				# 	MJD = np.append(MJD, MJD[-1] + intv)
 					
 
 					
-					if MJD[-1] - MJD[0] > baseline:
-						break
-				MJD = np.array(MJD)
-				good_all_ts = 1
-				for ts in timescales:
-					good_this_ts = np.intersect1d(np.where(MJD[1:] - MJD[0:-1] > 0.9 * ts), np.where(MJD[1:] - MJD[0:-1] < 1.1 * ts))
-					if len(good_this_ts):
-						pass
-					else:
-						good_all_ts = 0
-				if not good_all_ts:
-					continue
+				# 	if MJD[-1] - MJD[0] > baseline:
+				# 		break
+				# MJD = np.array(MJD)
+				# good_all_ts = 1
+				# for ts in timescales:
+				# 	good_this_ts = np.intersect1d(np.where(MJD[1:] - MJD[0:-1] > 0.9 * ts), np.where(MJD[1:] - MJD[0:-1] < 1.1 * ts))
+				# 	if len(good_this_ts):
+				# 		pass
+				# 	else:
+				# 		good_all_ts = 0
+				# 	print ts, good_this_ts, good_all_ts
+				# 	yyy = raw_input('pause')
+				# if not good_all_ts:
+				# 	continue
+				MJD = np.linspace(0, baseline, baseline / 10.0 + 1)
 
 			elif prior == 'epoch':
 				epoch = 4000
@@ -485,21 +497,32 @@ class lc_simulation(object):
 					MJD = np.append(MJD, MJD[-1] + intv)			
 
 
-			input_mag = np.ones(len(MJD)) * mean_mag
-			input_err = abs(np.random.normal(0, 1, len(MJD))) * frac_err * mean_mag
+			# input_mag = np.ones(len(MJD)) * mean_mag
+			# input_err = abs(np.random.normal(0, 1, len(MJD))) * frac_err * mean_mag
 
-			MJD_benchmark = choice(self.baseline_set, size=1)
+			# MJD_benchmark = choice(self.baseline_set, size=1)
 
-			ps = PredictSpear(sigma, tau, llags, lwids, lscales, spearmode="Pmap", GPmodel=model)
-			lcdat = [[MJD, input_mag, input_err], [MJD, input_mag, input_err]]
-			# print (np.array(lcdat) <= 0.0).any()
-			lcnew = ps.generate(lcdat, set_threading=False)[0]
+			# ps = PredictSpear(sigma, tau, llags, lwids, lscales, spearmode="Pmap", GPmodel=model)
+			# lcdat = [[MJD, input_mag, input_err], [MJD, input_mag, input_err]]
+			# # print (np.array(lcdat) <= 0.0).any()
+			# lcnew = ps.generate(lcdat, set_threading=False)[0]
+
+			lc_mag = [mean_mag + np.random.normal(0, frac_err * mean_mag)]
+			for i in range(1, len(MJD)):
+				lc_mag.append(np.exp(-(MJD[i] - MJD[i-1]) / tau) * lc_mag[i - 1] +\
+							  mean_mag * (1 - np.exp(-(MJD[i] - MJD[i-1]) / tau)))
+
+
 
 			# print '5'
 
-			lc_mag = np.array(lcnew[1])
-			lc_err = np.array(lcnew[2])
+			# lc_mag = np.array(lcnew[1])
+			# lc_err = np.array(lcnew[2])
+			lc_mag = np.array(lc_mag)
 			MJD = np.array(MJD)
+
+			# print "mag: ", lc_mag
+			# print "max_del_mag: ", np.max(lc_mag) - np.min(lc_mag)
 
 			if np.max(lc_mag) - np.min(lc_mag) > 5:
 				continue
